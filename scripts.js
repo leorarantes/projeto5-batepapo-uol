@@ -5,18 +5,20 @@ let userName = {
 
 function getUserName() {
     const name = document.querySelector(".input-name").value;
-    userName.name = name;
 
-    setTimeout(loadingRegister, 500);
+    if(name !== "") { 
+        userName.name = name;
 
-    setTimeout(sendNameToServer, 2000);
+        setTimeout(loadingRegister, 500);
 
-    setInterval(verifyUserStatus, 4900);
+        setTimeout(sendName, 2000);
 
-    setTimeout(loadingChat, 6200);
+        setInterval(verifyUserStatus, 4900);
 
-    setTimeout(renderizeChat, 8200);
+        setTimeout(loadingChat, 6200);
 
+        setTimeout(renderizeChat, 8200);
+    }
 }
 
 
@@ -42,15 +44,17 @@ function loadingChat() {
 }
 
 
-function treatSuccess(answer) {
+function treatSendNameSuccess(answer) {
     const statusCode = answer.status;
     console.log(statusCode);
 }
 
 
-function treatError(answer) {
-    const error = document.querySelector("body");
-    error.innerHTML = `
+function treatSendNameError(answer) {
+    const error = answer.response.status;
+    console.log(error);
+    const errorPage = document.querySelector("body");
+    errorPage.innerHTML = `
         <a class="warning-text">O nome de usuário informado já está em uso, tente novamente!</a>
         <script src="scripts.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>`;
@@ -58,19 +62,19 @@ function treatError(answer) {
 }
 
 function verifyUserStatus() {
-    const userStatusPromise = axios.post('https://mock-api.driven.com.br/api/v4/uol/status', userName);
-    userStatusPromise.then(treatSuccess);
-    userStatusPromise.catch(treatError);
+    const userStatusRequisition = axios.post('https://mock-api.driven.com.br/api/v4/uol/status', userName);
+    userStatusRequisition.then(treatSendNameSuccess);
+    userStatusRequisition.catch(treatSendNameError);
 }
 
 function reloadPage() {
     window.location.reload();
 }
 
-function sendNameToServer() {
-    const registerPromise = axios.post('https://mock-api.driven.com.br/api/v4/uol/participants', userName);
-    registerPromise.then(treatSuccess);
-    registerPromise.catch(treatError);
+function sendName() {
+    const registerRequisition = axios.post('https://mock-api.driven.com.br/api/v4/uol/participants', userName);
+    registerRequisition.then(treatSendNameSuccess);
+    registerRequisition.catch(treatSendNameError);
 }
 
 
@@ -83,25 +87,99 @@ function renderizeChat() {
     <ion-icon name="people" class="logo-people"></ion-icon>
     </header>
     <main>
-        <ul class="chat">
-            <li class="status">
-            <a class="time">(09:21:45)</a><a class="who">João</a><a>entra na sala...</a>
-            </li>
-            <li>
-            <a class="time">(09:21:45)</a><a class="who">João</a><a>para</a> <a class="who">João:</a><a>oi</a>
-            </li>
-            <li>
-            <a class="time">(09:21:45)</a><a class="who">João:</a><a>para</a><a class="who">João:</a><a>oi</a>
-            </li>
-            <li class="private">
-            <a class="time">(09:21:45)</a><a class="who">João:</a><a>para</a><a class="who">João:</a><a>oi</a>
-            </li>
         <ul>
+        </ul>
     </main>
     <footer>
         <input type="text" placeholder="Escreva aqui..." class="input-box">
-        <ion-icon name="paper-plane-outline" class="send"></ion-icon>
+        <ion-icon onclick="sendMessage()" data-identifier="send-message" name="paper-plane-outline" class="send"></ion-icon>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="scripts.js"></script>`;
+
+    setInterval(addMessages, 3000);
+}
+
+function addMessages() {
+    const messagesRequisition = axios.get("https://mock-api.driven.com.br/api/v4/uol/messages");
+    messagesRequisition.then(treatAddMessagesSuccess);
+    messagesRequisition.catch(treatAddMessagesError);
+}
+
+function treatAddMessagesSuccess(answer) {
+    let i = 0;
+    const messagesArray = answer.data;
+    let newUl = document.querySelector("ul");
+    newUl.innerHTML = "";
+    let messageObject = {
+        from: "",
+		to: "",
+		text: "",
+		type: "",
+		time: ""
+	}
+
+    for(i=70; i<messagesArray.length; i++) {
+        messageObject = messagesArray[i];
+        if(messageObject.type == "status") {
+            newUl.innerHTML += `
+                <li class="status">
+                    <a class="time">(${messageObject.time})</a><a class="who">${messageObject.from}</a><a>${messageObject.text}</a>
+                </li>`;
+            const visibleText= document.querySelector("ul:last-child li:last-child a");
+            visibleText.scrollIntoView();
+        } else if(messageObject.type == "private_message") {
+            if(messageObject.to == userName.name) {
+                newUl.innerHTML += `
+                    <li class="private">
+                        <a class="time">(${messageObject.time})</a><a class="who">${messageObject.from}</a><a>para</a> <a class="to">${messageObject.to}:</a><a data-identifier="message" class="text">${messageObject.text}</a>
+                    </li>`;
+                const visibleText= document.querySelector("ul:last-child li:last-child a");
+                visibleText.scrollIntoView();
+            }
+        } else {
+            newUl.innerHTML += `
+                <li class>
+                    <a class="time">(${messageObject.time})</a><a class="who">${messageObject.from}</a><a>para</a> <a class="to">${messageObject.to}:</a><a data-identifier="message" class="text">${messageObject.text}</a>
+                </li>`;
+            const visibleText= document.querySelector("ul:last-child li:last-child a");
+            visibleText.scrollIntoView();
+        }
+    }
+}
+
+function treatAddMessagesError(answer) {
+    const error = answer.response.status;
+    console.log(error);
+}
+
+function sendMessage() {
+    const message = document.querySelector(".input-box").value;
+    const messageObject = {
+        from: userName.name,
+		to: "Todos",
+		text: message,
+		type: "message",
+	}
+
+    if(message !== "") {
+        const sendMessageRequisition = axios.post('https://mock-api.driven.com.br/api/v4/uol/messages', messageObject);
+        sendMessageRequisition.then(treatSendMessageSuccess);
+        sendMessageRequisition.catch(treatSendMessageError);
+        const eraseInput = document.querySelector("footer");
+        eraseInput.innerHTML = `
+            <input type="text" placeholder="Escreva aqui..." class="input-box">
+            <ion-icon onclick="sendMessage()" name="paper-plane-outline" class="send"></ion-icon>
+        `;
+    }
+}
+
+function treatSendMessageSuccess(answer) {
+    const statusCode = answer.status;
+    console.log(statusCode);
+}
+
+function treatSendMessageError(answer) {
+    const error = answer.response.status;
+    console.log(error);
 }

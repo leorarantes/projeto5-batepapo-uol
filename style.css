@@ -114,11 +114,6 @@ main {
   right: 6%;
 }
 
-main {
-  width: 100%;
-  margin-top: 80px;
-}
-
 ul {
   width: 100%;
   margin-bottom: 80px;
@@ -128,7 +123,8 @@ ul {
 
 li {
   width: 100%;
-  height: 40px;
+  min-height: 40px;
+  height: fit-content;
   background-color: #FFFFFF;
   display: flex;
   align-items: center;
@@ -137,6 +133,9 @@ li {
   margin-bottom: 4px;
   padding-left: 8px;
   padding-right: 8px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  overflow-wrap: break-word;
 }
 
 .status {
@@ -161,11 +160,17 @@ a:last-child {
   margin-right: 0px;
 }
 
-.time {
-  color: #AAAAAA;
+.text {
+  max-width: 150px;
 }
 
-.who {
+.time {
+  color: #AAAAAA;
+  margin-right: 5px;
+}
+
+.who, .to {
+  max-width: 50px;
   font-weight: bold;
 }
 
